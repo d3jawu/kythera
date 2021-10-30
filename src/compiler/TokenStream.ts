@@ -2,7 +2,9 @@ const isWhitespace = (char: string): boolean =>
   [" ", "\t", "\n", "\r"].includes(char);
 
 const isSymbol = (char: string): boolean =>
-  [".", ",", ";", "#", "+", "-", "/", "*", "%", "(", ")"].includes(char);
+  [".", ",", ":", "!", "+", "-", "/", "*", "%", "(", ")", "'", '"'].includes(
+    char
+  );
 
 export { isWhitespace, isSymbol };
 export default class TokenStream {

@@ -80,7 +80,6 @@ export default function compile(raw: string): JS {
 
           const val = exp(stream.consume());
 
-          // return scope.set(name, val);
           return `(${name} = ${val})`;
         } else {
           return `(${name})`;
@@ -90,21 +89,24 @@ export default function compile(raw: string): JS {
         throw new Error(`Unexpected token: ${word}`);
       });
 
-  const precedences: Record<string, number> = {
-    "+": 11,
-    "-": 11,
-    "*": 12,
-    "/": 12,
-    "%": 12,
-  };
+  // copied from Java's precedence levels
+  const precedenceOf = (op: string): number | null =>
+    match<string, number | null>(op)
+      .with("||", () => 3)
+      .with("&&", () => 4)
+      .with("==", "!=", () => 8)
+      .with("<", ">", "<=", ">=", () => 9)
+      .with("+", "-", () => 11)
+      .with("*", "/", "%", () => 12)
+      .otherwise(() => null);
 
   const binExp = (left: JS, currentPrecedence: number): JS => {
     const op = stream.peek();
-    const nextPrecedence = precedences[op];
+    const nextPrecedence = precedenceOf(op);
 
     if (nextPrecedence && nextPrecedence > currentPrecedence) {
-      const next = stream.consume();
-      const right = binExp(expAtom(stream.consume()), nextPrecedence);
+      stream.consume();
+      const right: JS = binExp(expAtom(stream.consume()), nextPrecedence);
 
       // TODO treat op as overloaded operator function call
       const binary = `${left} ${op} ${right}`;
@@ -117,9 +119,6 @@ export default function compile(raw: string): JS {
   // parse statements
   while (!stream.eof()) {
     let token = stream.consume();
-
-    console.log("token:");
-    console.log(token);
 
     try {
       match(token)
@@ -139,12 +138,11 @@ export default function compile(raw: string): JS {
           stream.consumeExpect("=");
           const val: JS = exp(stream.consume());
 
-          output += `let ${ident} = ${val}`;
+          output += `let ${ident} = ${val};`;
         })
         .otherwise((token) => {
-          output += exp(token);
+          output += exp(token) + ";";
         });
-      output += ";\n";
     } catch (err) {
       stream.throwWithPos(err as string);
     }
