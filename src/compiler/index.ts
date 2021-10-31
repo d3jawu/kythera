@@ -27,10 +27,12 @@ export default function compile(raw: string): JS {
             composed = binExp(composed, 0);
           }
         )
+        .with("(", () => {
+          throw new Error("Function call not yet implemented.");
+        })
         .otherwise(() => {
           stop = true;
         });
-
       if (stop) {
         break;
       }
@@ -72,6 +74,15 @@ export default function compile(raw: string): JS {
           return numberString;
         }
       )
+      .with('"', (delimiter: string) => {
+        let str = "";
+        while (stream.peekChar() !== delimiter) {
+          str += stream.consumeChar();
+        }
+        stream.consumeExpect(delimiter);
+
+        return `"${str}"`;
+      })
       .with("true", () => "true")
       .with("false", () => "false")
       .when(isIdentifier, (name) => {
