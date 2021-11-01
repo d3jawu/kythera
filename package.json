@@ -19,6 +19,7 @@
   "homepage": "https://gitlab.com/dejawu/kytherascript#readme",
   "dependencies": {
     "prettier": "^2.4.1",
+    "terser": "^5.9.0",
     "ts-node": "^10.3.1",
     "ts-pattern": "^3.3.3",
     "typescript": "^4.4.4"
