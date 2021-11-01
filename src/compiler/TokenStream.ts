@@ -1,3 +1,5 @@
+import { isTokenKind } from "typescript";
+
 const isWhitespace = (char: string): boolean =>
   [" ", "\t", "\n", "\r"].includes(char);
 
@@ -7,6 +9,7 @@ const isSymbol = (char: string): boolean =>
     ",",
     ";",
     ":",
+    "=",
     "!",
     "+",
     "-",
@@ -79,9 +82,11 @@ export default class TokenStream {
     let token = "" + this.consumeChar();
 
     if (isSymbol(token)) {
-      // build multi-symbol token
-      while (isSymbol(this.peekChar())) {
-        token += this.consumeChar();
+      // build multi-symbol token if possible
+      if (["=", "!", "+", "-", "/", "*", "%"].includes(token)) {
+        while (isSymbol(this.peekChar())) {
+          token += this.consumeChar();
+        }
       }
 
       return token;
@@ -101,7 +106,9 @@ export default class TokenStream {
   consumeExpect(expected: string): string {
     const next = this.consume();
     if (next !== expected) {
-      throw new Error(`Expected ${expected} but got ${next}`);
+      throw new Error(
+        `Expected ${expected} but got ${next || (this.eof() ? "EOF" : "")}`
+      );
     }
     return next;
   }

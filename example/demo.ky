@@ -16,14 +16,28 @@ can be nested!
 
 */
 
+
 // number literals
-let n1 = 20
-let n2 = -99
-let n3 = 1.6
-let n4 = -9.1
-let n5 = 0.1
-let n6 = -0.5
+20; // a semicolon can be used to deliberately end a statement, but this is usually unnecessary
+-99 // in this case, it stops the '-' in '-99' from being confused for subtraction
+1.6;
+-9.1;
+0.1;
+-0.5;
 
 // binary expressions
 let b1 = (1 + 2) * 3 - 4
 let b2 = 22 + 99 - 3 * 4 - (x)
+
+// boolean literals
+true
+false
+
+// boolean operations
+!true
+!false
+
+true || false
+true && false;
+
+(true || false) || (false && true)

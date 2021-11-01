@@ -22,7 +22,7 @@ export default function compile(raw: string): JS {
       let stop = false;
       match(next)
         .when(
-          (next) => ["+", "-", "/", "*", "%"].includes(next),
+          (next) => !!precedenceOf(next),
           () => {
             composed = binExp(composed, 0);
           }
@@ -74,6 +74,9 @@ export default function compile(raw: string): JS {
           return numberString;
         }
       )
+      .with("!", () => {
+        return `!${exp(stream.consume())}`;
+      })
       .with('"', (delimiter: string) => {
         let str = "";
         while (stream.peekChar() !== delimiter) {
@@ -135,12 +138,12 @@ export default function compile(raw: string): JS {
       match(token)
         .with("//", () => {
           // single-line comment
-          while (stream.peekChar() !== "\n") {
+          while (stream.peekChar() !== "\n" && !stream.eof()) {
             stream.consumeChar();
           }
         })
         .with("/*", () => {
-          // multi-line comment
+          // block comment
           let nestLevel = 1;
 
           while (true) {
@@ -163,6 +166,10 @@ export default function compile(raw: string): JS {
               }
             }
 
+            if (stream.eof()) {
+              throw new Error("Unexpected EOF in block comment");
+            }
+
             stream.consumeChar();
           }
         })
@@ -178,6 +185,7 @@ export default function compile(raw: string): JS {
           output += exp(token) + ";";
         });
     } catch (err) {
+      console.log(output);
       stream.throwWithPos(err as string);
     }
   }
