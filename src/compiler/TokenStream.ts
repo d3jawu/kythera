@@ -2,9 +2,22 @@ const isWhitespace = (char: string): boolean =>
   [" ", "\t", "\n", "\r"].includes(char);
 
 const isSymbol = (char: string): boolean =>
-  [".", ",", ":", "!", "+", "-", "/", "*", "%", "(", ")", "'", '"'].includes(
-    char
-  );
+  [
+    ".",
+    ",",
+    ";",
+    ":",
+    "!",
+    "+",
+    "-",
+    "/",
+    "*",
+    "%",
+    "(",
+    ")",
+    "'",
+    '"',
+  ].includes(char);
 
 export { isWhitespace, isSymbol };
 export default class TokenStream {
@@ -66,6 +79,11 @@ export default class TokenStream {
     let token = "" + this.consumeChar();
 
     if (isSymbol(token)) {
+      // build multi-symbol token
+      while (isSymbol(this.peekChar())) {
+        token += this.consumeChar();
+      }
+
       return token;
     }
 

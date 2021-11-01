@@ -1,0 +1,29 @@
+// single-line comment
+
+/*
+Multi
+line
+comment
+*/
+
+/*
+Multi line comments
+
+/*
+can be nested!
+/* As much as you want!*/
+*/
+
+*/
+
+// number literals
+let n1 = 20
+let n2 = -99
+let n3 = 1.6
+let n4 = -9.1
+let n5 = 0.1
+let n6 = -0.5
+
+// binary expressions
+let b1 = (1 + 2) * 3 - 4
+let b2 = 22 + 99 - 3 * 4 - (x)

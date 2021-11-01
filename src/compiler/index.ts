@@ -133,24 +133,47 @@ export default function compile(raw: string): JS {
 
     try {
       match(token)
-        .with("/", () => {
-          if (stream.peekChar() === "/") {
-            while (stream.peekChar() !== "\n") {
-              stream.consumeChar();
-            }
-          } else if (stream.peekChar() === "*") {
-            throw new Error("Block comments not yet implemented");
-          } else {
-            throw new Error("Unexpected '/'");
+        .with("//", () => {
+          // single-line comment
+          while (stream.peekChar() !== "\n") {
+            stream.consumeChar();
           }
         })
-        .with("let", () => {
+        .with("/*", () => {
+          // multi-line comment
+          let nestLevel = 1;
+
+          while (true) {
+            if (stream.peek() === "/*") {
+              stream.consume();
+              nestLevel += 1;
+            }
+
+            if (stream.peekChar() === "*") {
+              stream.consumeChar();
+
+              if (stream.peekChar() === "/") {
+                stream.consumeChar();
+
+                nestLevel -= 1;
+
+                if (nestLevel === 0) {
+                  break;
+                }
+              }
+            }
+
+            stream.consumeChar();
+          }
+        })
+        .with("let", "const", (def) => {
           const ident = stream.consume();
           stream.consumeExpect("=");
           const val: JS = exp(stream.consume());
 
-          output += `let ${ident} = ${val};`;
+          output += `${def} ${ident} = ${val};`;
         })
+        .with(";", () => {})
         .otherwise((token) => {
           output += exp(token) + ";";
         });
