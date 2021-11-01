@@ -18,6 +18,10 @@ const isSymbol = (char: string): boolean =>
     "%",
     "(",
     ")",
+    "{",
+    "}",
+    "[",
+    "]",
     "'",
     '"',
   ].includes(char);

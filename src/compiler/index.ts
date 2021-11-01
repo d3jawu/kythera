@@ -88,6 +88,31 @@ export default function compile(raw: string): JS {
       })
       .with("true", () => "true")
       .with("false", () => "false")
+      .with("{", () => {
+        let entries: Record<string, JS> = {};
+        // object literal
+        while (stream.peek() !== "}") {
+          const key = stream.consume();
+          stream.consumeExpect(":");
+
+          const val = exp(stream.consume());
+          stream.consumeExpect(",");
+
+          entries[key] = val;
+        }
+        stream.consumeExpect("}");
+
+        return `
+        {
+          ${Object.entries(entries).reduce((prev, [key, js]) => {
+            return `${prev}${key}: ${js},`;
+          }, "")}
+        }
+        `;
+      })
+      .with("if", () => {
+        throw new Error("if is not yet implemented");
+      })
       .when(isIdentifier, (name) => {
         if (stream.peek() === "=") {
           stream.consumeExpect("=");
