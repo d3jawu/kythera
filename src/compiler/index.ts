@@ -111,7 +111,7 @@ export default function compile(raw: string): JS {
         `;
       })
       .with("if", () => {
-        // if as expression (cannot return)
+        // if as expression - cannot return
         const condition = exp(stream.consume());
         stream.consumeExpect("{");
         let ifBody = "(() => {";
@@ -237,12 +237,61 @@ export default function compile(raw: string): JS {
 
         return `${def} ${ident} = ${val};`;
       })
+      .with("if", (def) => {
+        // if as statement - can return/break, but doesn't evaluate to a value
+        let body = "if";
+        const condition = exp(stream.consume());
+        body += condition;
+        body += "{";
+
+        stream.consumeExpect("{");
+        while (stream.peek() !== "}") {
+          body += statement(stream.consume());
+        }
+        stream.consumeExpect("}");
+        body += "}";
+
+        let elsed = false;
+        while (stream.peek() === "else") {
+          if (elsed) {
+            throw new Error(
+              "Unexpected 'else' after if-statement is already exhaustive"
+            );
+          }
+
+          stream.consume();
+          body += " else ";
+
+          if (stream.peek() === "if") {
+            stream.consumeExpect("if");
+            const condition = exp(stream.consume());
+            body += `if ${condition}`;
+          } else {
+            elsed = true;
+          }
+
+          stream.consumeExpect("{");
+          body += "{";
+
+          while (stream.peek() !== "}") {
+            body += statement(stream.consume());
+          }
+          stream.consumeExpect("}");
+          body += "}";
+        }
+
+        return body;
+      })
       .with(";", () => "")
       .otherwise((token) => exp(token) + ";");
 
   // parse statements
   while (!stream.eof()) {
     let token = stream.consume();
+
+    if (!token) {
+      continue;
+    }
 
     try {
       output += statement(token);

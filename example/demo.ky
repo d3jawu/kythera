@@ -50,10 +50,23 @@ true && false;
 // string literal
 "hello world"
 
+// object literal
 {
     x: 2,
     y: "abc",
     z: false,
 }
 
+// if-expression (evaluates to a value, but cannot return or break)
 let x = if (true) { 3 } else if (2) { 4 } else { 5 }
+
+// if-statement (does not evaluate to a value, but can affect control flow)
+if 1 {
+    x = 3
+} else if(2) {
+    z = 5
+} else {
+    q = 6
+}
+
+let z = 2;
