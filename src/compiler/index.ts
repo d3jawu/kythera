@@ -111,7 +111,39 @@ export default function compile(raw: string): JS {
         `;
       })
       .with("if", () => {
-        throw new Error("if is not yet implemented");
+        // if as expression (cannot return)
+        const condition = exp(stream.consume());
+        stream.consumeExpect("{");
+        let ifBody = "(() => {";
+        while (stream.peek() !== "}") {
+          ifBody += statement(stream.consume());
+        }
+        stream.consumeExpect("}");
+        ifBody += "})()";
+
+        // if-expression must be exhaustive
+        if (stream.peek() !== "else") {
+          throw new Error("if-expression must be exhaustive");
+        }
+        stream.consumeExpect("else");
+        const elseBody = match<string, JS>(stream.consume())
+          .with("if", (next: "if") => exp(next))
+          .with("{", () => {
+            let elseBody = "(() => {";
+            while (stream.peek() !== "}") {
+              elseBody += statement(stream.consume());
+            }
+            stream.consumeExpect("}");
+            elseBody += "})()";
+            return elseBody;
+          })
+          .otherwise(() => {
+            throw new Error(
+              `Expected 'if' or '{' after 'else' but got ${stream.peek()}`
+            );
+          });
+
+        return `(${condition} ? ${ifBody} : ${elseBody})`;
       })
       .when(isIdentifier, (name) => {
         if (stream.peek() === "=") {
@@ -155,60 +187,65 @@ export default function compile(raw: string): JS {
     return left;
   };
 
+  const statement = (token: string): JS =>
+    match(token)
+      .with("//", () => {
+        // single-line comment
+        while (stream.peekChar() !== "\n" && !stream.eof()) {
+          stream.consumeChar();
+        }
+
+        return "";
+      })
+      .with("/*", () => {
+        // block comment
+        let nestLevel = 1;
+
+        while (true) {
+          if (stream.peek() === "/*") {
+            stream.consume();
+            nestLevel += 1;
+          }
+
+          if (stream.peekChar() === "*") {
+            stream.consumeChar();
+
+            if (stream.peekChar() === "/") {
+              stream.consumeChar();
+
+              nestLevel -= 1;
+
+              if (nestLevel === 0) {
+                break;
+              }
+            }
+          }
+
+          if (stream.eof()) {
+            throw new Error("Unexpected EOF in block comment");
+          }
+
+          stream.consumeChar();
+        }
+
+        return "";
+      })
+      .with("let", "const", (def) => {
+        const ident = stream.consume();
+        stream.consumeExpect("=");
+        const val: JS = exp(stream.consume());
+
+        return `${def} ${ident} = ${val};`;
+      })
+      .with(";", () => "")
+      .otherwise((token) => exp(token) + ";");
+
   // parse statements
   while (!stream.eof()) {
     let token = stream.consume();
 
     try {
-      match(token)
-        .with("//", () => {
-          // single-line comment
-          while (stream.peekChar() !== "\n" && !stream.eof()) {
-            stream.consumeChar();
-          }
-        })
-        .with("/*", () => {
-          // block comment
-          let nestLevel = 1;
-
-          while (true) {
-            if (stream.peek() === "/*") {
-              stream.consume();
-              nestLevel += 1;
-            }
-
-            if (stream.peekChar() === "*") {
-              stream.consumeChar();
-
-              if (stream.peekChar() === "/") {
-                stream.consumeChar();
-
-                nestLevel -= 1;
-
-                if (nestLevel === 0) {
-                  break;
-                }
-              }
-            }
-
-            if (stream.eof()) {
-              throw new Error("Unexpected EOF in block comment");
-            }
-
-            stream.consumeChar();
-          }
-        })
-        .with("let", "const", (def) => {
-          const ident = stream.consume();
-          stream.consumeExpect("=");
-          const val: JS = exp(stream.consume());
-
-          output += `${def} ${ident} = ${val};`;
-        })
-        .with(";", () => {})
-        .otherwise((token) => {
-          output += exp(token) + ";";
-        });
+      output += statement(token);
     } catch (err) {
       console.log(output);
       stream.throwWithPos(err as string);
