@@ -239,10 +239,8 @@ export default function compile(raw: string): JS {
       })
       .with("if", (def) => {
         // if as statement - can return/break, but doesn't evaluate to a value
-        let body = "if";
         const condition = exp(stream.consume());
-        body += condition;
-        body += "{";
+        let body = `if (${condition}) {`;
 
         stream.consumeExpect("{");
         while (stream.peek() !== "}") {
@@ -279,6 +277,19 @@ export default function compile(raw: string): JS {
           stream.consumeExpect("}");
           body += "}";
         }
+
+        return body;
+      })
+      .with("while", () => {
+        const condition = exp(stream.consume());
+        stream.consumeExpect("{");
+
+        let body = `while(${condition}) {`;
+        while (stream.peek() !== "}") {
+          body += statement(stream.consume());
+        }
+        stream.consumeExpect("}");
+        body += "}";
 
         return body;
       })

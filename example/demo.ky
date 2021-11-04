@@ -69,4 +69,7 @@ if 1 {
     q = 6
 }
 
-let z = 2;
+let z = 2
+while(z < 10) {
+    z = z + 1
+}
