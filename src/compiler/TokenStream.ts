@@ -1,5 +1,3 @@
-import { isTokenKind } from "typescript";
-
 const isWhitespace = (char: string): boolean =>
   [" ", "\t", "\n", "\r"].includes(char);
 
@@ -41,7 +39,7 @@ export default class TokenStream {
     this.col = 0;
   }
 
-  eof() {
+  get eof() {
     return this.pos >= this.input.length;
   }
 
@@ -99,7 +97,7 @@ export default class TokenStream {
     while (
       !isWhitespace(this.peekChar()) &&
       !isSymbol(this.peekChar()) &&
-      !this.eof()
+      !this.eof
     ) {
       token += this.consumeChar();
     }
@@ -111,7 +109,7 @@ export default class TokenStream {
     const next = this.consume();
     if (next !== expected) {
       throw new Error(
-        `Expected ${expected} but got ${next || (this.eof() ? "EOF" : "")}`
+        `Expected ${expected} but got ${next || (this.eof ? "EOF" : "")}`
       );
     }
     return next;

@@ -35,7 +35,7 @@ export default function compile(raw: string): JS {
         .with("(", () => {
           stream.consumeExpect("(");
           const args: Array<JS> = [];
-          while (stream.peek() !== ")") {
+          while (stream.peek() !== ")" && !stream.eof) {
             args.push(exp(stream.consume()));
 
             if (stream.peek() === ",") {
@@ -94,7 +94,7 @@ export default function compile(raw: string): JS {
       })
       .with('"', (delimiter: string) => {
         let str = "";
-        while (stream.peekChar() !== delimiter) {
+        while (stream.peekChar() !== delimiter && !stream.eof) {
           str += stream.consumeChar();
         }
         stream.consumeExpect(delimiter);
@@ -106,7 +106,7 @@ export default function compile(raw: string): JS {
       .with("{", () => {
         let entries: Record<string, JS> = {};
         // object literal
-        while (stream.peek() !== "}") {
+        while (stream.peek() !== "}" && !stream.eof) {
           const key = stream.consume();
           stream.consumeExpect(":");
 
@@ -130,14 +130,14 @@ export default function compile(raw: string): JS {
         const condition = exp(stream.consume());
         stream.consumeExpect("{");
         let ifBody = "(() => {";
-        while (stream.peek() !== "}") {
+        while (stream.peek() !== "}" && !stream.eof) {
           ifBody += statement(stream.consume());
         }
         stream.consumeExpect("}");
         ifBody += "})()";
 
         // if-expression must be exhaustive
-        if (stream.peek() !== "else") {
+        if (stream.peek() !== "else" && !stream.eof) {
           throw new Error("if-expression must be exhaustive");
         }
         stream.consumeExpect("else");
@@ -145,7 +145,7 @@ export default function compile(raw: string): JS {
           .with("if", (next: "if") => exp(next))
           .with("{", () => {
             let elseBody = "(() => {";
-            while (stream.peek() !== "}") {
+            while (stream.peek() !== "}" && !stream.eof) {
               elseBody += statement(stream.consume());
             }
             stream.consumeExpect("}");
@@ -206,7 +206,7 @@ export default function compile(raw: string): JS {
     match(token)
       .with("//", () => {
         // single-line comment
-        while (stream.peekChar() !== "\n" && !stream.eof()) {
+        while (stream.peekChar() !== "\n" && !stream.eof) {
           stream.consumeChar();
         }
 
@@ -236,7 +236,7 @@ export default function compile(raw: string): JS {
             }
           }
 
-          if (stream.eof()) {
+          if (stream.eof) {
             throw new Error("Unexpected EOF in block comment");
           }
 
@@ -258,40 +258,46 @@ export default function compile(raw: string): JS {
         let body = `if (${condition}) {`;
 
         stream.consumeExpect("{");
-        while (stream.peek() !== "}") {
+        while (stream.peek() !== "}" && !stream.eof) {
           body += statement(stream.consume());
         }
         stream.consumeExpect("}");
         body += "}";
 
-        let elsed = false;
+        // else-ifs
         while (stream.peek() === "else") {
-          if (elsed) {
-            throw new Error(
-              "Unexpected 'else' after if-statement is already exhaustive"
-            );
-          }
-
-          stream.consume();
+          stream.consumeExpect("else");
           body += " else ";
 
-          if (stream.peek() === "if") {
-            stream.consumeExpect("if");
-            const condition = exp(stream.consume());
-            body += `if ${condition}`;
-          } else {
-            elsed = true;
+          if (stream.peek() !== "if" && !stream.eof) {
+            stream.consumeExpect("{");
+            body += "{";
+
+            while (stream.peek() !== "}" && !stream.eof) {
+              body += statement(stream.consume());
+            }
+            stream.consumeExpect("}");
+            body += "}";
+
+            break;
           }
+
+          stream.consumeExpect("if");
+          body += "if ";
+          const condition = exp(stream.consume());
+          body += condition;
 
           stream.consumeExpect("{");
           body += "{";
 
-          while (stream.peek() !== "}") {
+          while (stream.peek() !== "}" && !stream.eof) {
             body += statement(stream.consume());
           }
           stream.consumeExpect("}");
           body += "}";
         }
+
+        // final else ('else' already consumed if present)
 
         return body;
       })
@@ -300,7 +306,7 @@ export default function compile(raw: string): JS {
         stream.consumeExpect("{");
 
         let body = `while(${condition}) {`;
-        while (stream.peek() !== "}") {
+        while (stream.peek() !== "}" && !stream.eof) {
           body += statement(stream.consume());
         }
         stream.consumeExpect("}");
@@ -312,7 +318,7 @@ export default function compile(raw: string): JS {
       .otherwise((token) => exp(token) + ";");
 
   // parse statements
-  while (!stream.eof()) {
+  while (!stream.eof) {
     let token = stream.consume();
 
     if (!token) {

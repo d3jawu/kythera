@@ -14,11 +14,16 @@ const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
     "*": (other) => self * other,
     "/": (other) => self / other,
     "%": (other) => ((self % other) + other) % other, // % in JS is remainder, not modulo
+    "<": (other) => self < other,
+    ">": (other) => self > other,
+    "<=": (other) => self <= other,
+    ">=": (other) => self >= other,
+    "==": (other) => self === other,
   }),
   function: () => ({}),
-  string: () => {
-    throw new Error("String is not yet implemented");
-  },
+  string: () => ({
+    // TODO substring, split, join, etc
+  }),
   object: (self) => self,
   bigint: () => ({}),
   undefined: () => ({}),

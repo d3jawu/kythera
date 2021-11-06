@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
         "strictNullChecks": true,
-        "esModuleInterop": true
+        "target": "ES6",
+        "moduleResolution": "Node"
     }
 }
