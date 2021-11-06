@@ -5,6 +5,7 @@
   "main": "src/kytherascript.ts",
   "scripts": {
     "start": "ts-node src/kytherascript.ts",
+    "build-rt": "npx tsc src/runtime/runtime.ts --outfile lib/runtime.js",
     "prettier": "prettier --write 'src/*'"
   },
   "repository": {

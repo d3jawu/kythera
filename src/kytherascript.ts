@@ -12,7 +12,11 @@ const { mode, entryPoint } = config;
 
 (async () => {
   try {
-    const raw = compile(readFileSync(entryPoint).toString());
+    const program = compile(readFileSync(entryPoint).toString());
+
+    // only read prelude if compile succeeds
+    const prelude: string = readFileSync("./lib/runtime.js").toString();
+    const raw = prelude + "\n" + program;
 
     // this is all terser's fault
     const out = await match<Mode, Promise<string>>(mode)

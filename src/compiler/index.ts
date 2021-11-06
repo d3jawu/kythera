@@ -27,8 +27,23 @@ export default function compile(raw: string): JS {
             composed = binExp(composed, 0);
           }
         )
+        .with(".", () => {
+          stream.consumeExpect(".");
+          const field = stream.consume();
+          composed = `${composed}["${field}"]`;
+        })
         .with("(", () => {
-          throw new Error("Function call not yet implemented.");
+          stream.consumeExpect("(");
+          const args: Array<JS> = [];
+          while (stream.peek() !== ")") {
+            args.push(exp(stream.consume()));
+
+            if (stream.peek() === ",") {
+              stream.consumeExpect(",");
+            }
+          }
+          stream.consumeExpect(")");
+          composed = `${composed}(${args.join(",")})`;
         })
         .otherwise(() => {
           stop = true;
@@ -156,8 +171,8 @@ export default function compile(raw: string): JS {
           return `(${name})`;
         }
       })
-      .otherwise((word) => {
-        throw new Error(`Unexpected token: ${word}`);
+      .otherwise((token) => {
+        throw new Error(`Unexpected token: '${token}'`);
       });
 
   // copied from Java's precedence levels
@@ -180,7 +195,7 @@ export default function compile(raw: string): JS {
       const right: JS = binExp(expAtom(stream.consume()), nextPrecedence);
 
       // TODO treat op as overloaded operator function call
-      const binary = `${left} ${op} ${right}`;
+      const binary = `k_val(${left})["${op}"](${right})`;
       return binExp(binary, currentPrecedence);
     }
 
