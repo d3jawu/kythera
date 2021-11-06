@@ -1,1 +1,1 @@
-// define things like "Int" here
+const u_console = console;

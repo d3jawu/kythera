@@ -14,24 +14,13 @@ export default function compile(raw: string): JS {
     /^[_a-zA-Z]+[_a-zA-Z0-9]*/.test(word);
 
   // starting token must already have been consumed and be passed as param.
-  const exp = (token: string): JS => {
+  const exp = (token: string, makeBinary: boolean = true): JS => {
     let composed = expAtom(token);
 
-    while (true) {
+    while (true && !stream.eof) {
       const next = stream.peek();
       let stop = false;
       match(next)
-        .when(
-          (next) => !!precedenceOf(next),
-          () => {
-            composed = binExp(composed, 0);
-          }
-        )
-        .with(".", () => {
-          stream.consumeExpect(".");
-          const field = stream.consume();
-          composed = `${composed}["${field}"]`;
-        })
         .with("(", () => {
           stream.consumeExpect("(");
           const args: Array<JS> = [];
@@ -43,8 +32,19 @@ export default function compile(raw: string): JS {
             }
           }
           stream.consumeExpect(")");
-          composed = `${composed}(${args.join(",")})`;
+          composed = `(${composed}(${args.join(",")}))`;
         })
+        .with(".", () => {
+          stream.consumeExpect(".");
+          const field = stream.consume();
+          composed = `(${composed}["${field}"])`;
+        })
+        .when(
+          (next) => !!precedenceOf(next) && makeBinary,
+          () => {
+            composed = binExp(composed, 0);
+          }
+        )
         .otherwise(() => {
           stop = true;
         });
@@ -160,15 +160,53 @@ export default function compile(raw: string): JS {
 
         return `(${condition} ? ${ifBody} : ${elseBody})`;
       })
+      .with("fn", () => {
+        const paramNames: Array<JS> = [];
+        stream.consumeExpect("(");
+        while (stream.peek() !== ")" && !stream.eof) {
+          if (isIdentifier(stream.peek())) {
+            paramNames.push(stream.consume());
+          } else {
+            throw new Error(
+              `Expected valid parameter name but got ${stream.peek()}`
+            );
+          }
+
+          if (stream.peek() === ",") {
+            stream.consumeExpect(",");
+          }
+        }
+        stream.consumeExpect(")");
+
+        let body = "";
+        if (stream.peek() === "{") {
+          // block body
+          stream.consumeExpect("{");
+          body += "{";
+
+          while (stream.peek() !== "}" && !stream.eof) {
+            body += statement(stream.consume());
+          }
+
+          stream.consumeExpect("}");
+          body += "}";
+        } else {
+          body = exp(stream.consume());
+        }
+
+        return `((${paramNames
+          .map((name) => `u_${name}`)
+          .join(",")}) => ${body})`;
+      })
       .when(isIdentifier, (name) => {
         if (stream.peek() === "=") {
           stream.consumeExpect("=");
 
           const val = exp(stream.consume());
 
-          return `(${name} = ${val})`;
+          return `(u_${name} = ${val})`;
         } else {
-          return `(${name})`;
+          return `u_${name}`;
         }
       })
       .otherwise((token) => {
@@ -192,10 +230,10 @@ export default function compile(raw: string): JS {
 
     if (nextPrecedence && nextPrecedence > currentPrecedence) {
       stream.consume();
-      const right: JS = binExp(expAtom(stream.consume()), nextPrecedence);
+      const right: JS = binExp(exp(stream.consume(), false), nextPrecedence);
 
       // TODO treat op as overloaded operator function call
-      const binary = `k_val(${left})["${op}"](${right})`;
+      const binary = `(k_val(${left})["${op}"](${right}))`;
       return binExp(binary, currentPrecedence);
     }
 
@@ -250,7 +288,7 @@ export default function compile(raw: string): JS {
         stream.consumeExpect("=");
         const val: JS = exp(stream.consume());
 
-        return `${def} ${ident} = ${val};`;
+        return `${def} u_${ident} = ${val};`;
       })
       .with("if", (def) => {
         // if as statement - can return/break, but doesn't evaluate to a value
@@ -314,6 +352,7 @@ export default function compile(raw: string): JS {
 
         return body;
       })
+      .with("return", () => "return")
       .with(";", () => "")
       .otherwise((token) => exp(token) + ";");
 

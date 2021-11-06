@@ -5,14 +5,14 @@
   "main": "src/kytherascript.ts",
   "scripts": {
     "start": "ts-node src/kytherascript.ts",
-    "build-rt": "npx tsc src/runtime/runtime.ts --outfile lib/runtime.js",
+    "build-rt": "npx tsc src/runtime/* --outdir lib/",
     "prettier": "prettier --write 'src/*'"
   },
   "repository": {
     "type": "git",
     "url": "git+ssh://git@gitlab.com/dejawu/kytherascript.git"
   },
-  "author": "Holly W",
+  "author": "Holly",
   "license": "ISC",
   "bugs": {
     "url": "https://gitlab.com/dejawu/kytherascript/issues"

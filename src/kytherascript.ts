@@ -15,8 +15,9 @@ const { mode, entryPoint } = config;
     const program = compile(readFileSync(entryPoint).toString());
 
     // only read prelude if compile succeeds
-    const prelude: string = readFileSync("./lib/runtime.js").toString();
-    const raw = prelude + "\n" + program;
+    const runtime: string = readFileSync("./lib/runtime.js").toString();
+    const prelude: string = readFileSync("./lib/prelude.js").toString();
+    const raw = `${runtime}\n${prelude}\n${program}`;
 
     const out = await match<Mode, Promise<string>>(mode)
       .with("dev", async () => raw)
