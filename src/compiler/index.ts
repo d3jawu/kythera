@@ -17,7 +17,7 @@ export default function compile(raw: string): JS {
   const exp = (token: string, makeBinary: boolean = true): JS => {
     let composed = expAtom(token);
 
-    while (true && !stream.eof) {
+    while (!stream.eof) {
       const next = stream.peek();
       let stop = false;
       match(next)
@@ -63,32 +63,6 @@ export default function compile(raw: string): JS {
         stream.consumeExpect(")");
         return e;
       })
-      .when(
-        (word) => /-|[0-9]+/.test(word),
-        (token: string) => {
-          let numberString = "";
-
-          // negative sign, if present
-          if (token === "-") {
-            numberString += "-";
-            token = stream.consume(); // reads in integer part
-          }
-
-          // positive whole number part
-          numberString += token;
-
-          // decimal part
-          if (stream.peek() === ".") {
-            stream.consumeExpect(".");
-            numberString += ".";
-
-            const decimalPart = stream.consume();
-            numberString += decimalPart;
-          }
-
-          return numberString;
-        }
-      )
       .with("!", () => {
         return `!${exp(stream.consume())}`;
       })
@@ -111,7 +85,10 @@ export default function compile(raw: string): JS {
           stream.consumeExpect(":");
 
           const val = exp(stream.consume());
-          stream.consumeExpect(",");
+
+          if (stream.peek() === ",") {
+            stream.consumeExpect(",");
+          }
 
           entries[key] = val;
         }
@@ -198,6 +175,33 @@ export default function compile(raw: string): JS {
           .map((name) => `u_${name}`)
           .join(",")}) => ${body})`;
       })
+      .with("typeof", () => `k_type(${exp(stream.consume())})`)
+      .when(
+        (word) => /-|[0-9]+/.test(word),
+        (token: string) => {
+          let numberString = "";
+
+          // negative sign, if present
+          if (token === "-") {
+            numberString += "-";
+            token = stream.consume(); // reads in integer part
+          }
+
+          // positive whole number part
+          numberString += token;
+
+          // decimal part
+          if (stream.peek() === ".") {
+            stream.consumeExpect(".");
+            numberString += ".";
+
+            const decimalPart = stream.consume();
+            numberString += decimalPart;
+          }
+
+          return numberString;
+        }
+      )
       .when(isIdentifier, (name) => {
         if (stream.peek() === "=") {
           stream.consumeExpect("=");
@@ -218,7 +222,7 @@ export default function compile(raw: string): JS {
     match<string, number | null>(op)
       .with("||", () => 3)
       .with("&&", () => 4)
-      .with("==", "!=", () => 8)
+      .with("==", "!=", "===", "!==", () => 8)
       .with("<", ">", "<=", ">=", () => 9)
       .with("+", "-", () => 11)
       .with("*", "/", "%", () => 12)
@@ -353,6 +357,8 @@ export default function compile(raw: string): JS {
         return body;
       })
       .with("return", () => "return")
+      .with("break", () => "break")
+      .with("continue", () => "continue")
       .with(";", () => "")
       .otherwise((token) => exp(token) + ";");
 

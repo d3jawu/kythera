@@ -1,23 +1,23 @@
 {
-  "name": "kytherascript",
+  "name": "kythera",
   "version": "1.0.0",
-  "description": "Kythera as a compiled subset of JavaScript",
-  "main": "src/kytherascript.ts",
+  "description": "A compact language with first-class types that compiles to JS",
+  "main": "src/kythera.ts",
   "scripts": {
-    "start": "ts-node src/kytherascript.ts",
+    "start": "ts-node src/kythera.ts",
     "build-rt": "npx tsc src/runtime/* --outdir lib/",
     "prettier": "prettier --write 'src/*'"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@gitlab.com/dejawu/kytherascript.git"
+    "url": "git+ssh://git@gitlab.com/dejawu/kythera.git"
   },
   "author": "Holly",
   "license": "ISC",
   "bugs": {
-    "url": "https://gitlab.com/dejawu/kytherascript/issues"
+    "url": "https://gitlab.com/dejawu/kythera/issues"
   },
-  "homepage": "https://gitlab.com/dejawu/kytherascript#readme",
+  "homepage": "https://gitlab.com/dejawu/kythera#readme",
   "dependencies": {
     "prettier": "^2.4.1",
     "terser": "^5.9.0",

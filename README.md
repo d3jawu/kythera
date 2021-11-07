@@ -1,3 +1,3 @@
-# KytheraScript
+# Kythera
 
-Kythera as a subset of JavaScript
+A compact programming language with first-class types that compiles to JavaScript.
