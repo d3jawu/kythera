@@ -9,7 +9,6 @@ const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
     "!": () => !self,
     // on Boolean, === is just an alias of ==.
     "==": (other) => self === other,
-    "===": (other) => self === other,
   }),
   number: (self) => ({
     "+": (other) => self + other,
@@ -23,7 +22,6 @@ const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
     ">=": (other) => self >= other,
     // on Number, === is just an alias of ==. Both check for strong equality
     "==": (other) => self === other,
-    "===": (other) => self === other,
   }),
   function: () => ({}),
   string: (self) => self, // string functions are already built-in
@@ -32,10 +30,10 @@ const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
       ? null
       : {
           // reference equality
-          "==": (other) => self == other,
-          "!=": (other) => self != other,
+          // "==": (other) => self == other,
+          // "!=": (other) => self != other,
           // deep equality
-          "===": (other) => {
+          "==": (other) => {
             if (typeof other !== "object") {
               return false;
             }
@@ -49,7 +47,7 @@ const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
 
             return selfKeys.every((key) => {
               // skip equality functions themselves
-              if (["==", "!=", "===", "!=="].includes(key)) {
+              if (["==", "!="].includes(key)) {
                 return true;
               }
 
@@ -57,12 +55,12 @@ const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
                 return false;
               }
 
-              return k_val(self[key])["==="](other[key]);
+              return k_val(self[key])["=="](other[key]);
             });
           },
           // deep inequality
-          "!==": (other) => {
-            return !k_val(self)["==="](other);
+          "!=": (other) => {
+            return !k_val(self)["=="](other);
           },
           // allow equality-checking definitions to be overridden
           ...self,

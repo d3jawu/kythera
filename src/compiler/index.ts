@@ -102,6 +102,27 @@ export default function compile(raw: string): JS {
         }
         `;
       })
+      .with("[", () => {
+        // tuple
+        let elements: Array<JS> = [];
+
+        while (stream.peek() !== "]" && !stream.eof) {
+          elements.push(exp(stream.consume()));
+
+          console.log("elements:");
+          console.log(elements);
+
+          if (stream.peek() === ",") {
+            stream.consumeExpect(",");
+          }
+        }
+
+        stream.consumeExpect("]");
+
+        return `({
+          ${elements.map((el, i) => `${i}: ${el}`).join(",")}
+        })`;
+      })
       .with("if", () => {
         // if as expression - cannot return
         const condition = exp(stream.consume());
@@ -214,6 +235,7 @@ export default function compile(raw: string): JS {
         }
       })
       .otherwise((token) => {
+        console.trace();
         throw new Error(`Unexpected token: '${token}'`);
       });
 
