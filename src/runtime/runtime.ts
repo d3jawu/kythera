@@ -7,7 +7,6 @@ const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
     "||": (other) => self || other,
     "&&": (other) => self && other,
     "!": () => !self,
-    // on Boolean, === is just an alias of ==.
     "==": (other) => self === other,
   }),
   number: (self) => ({
@@ -20,18 +19,16 @@ const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
     ">": (other) => self > other,
     "<=": (other) => self <= other,
     ">=": (other) => self >= other,
-    // on Number, === is just an alias of ==. Both check for strong equality
     "==": (other) => self === other,
   }),
-  function: () => ({}),
+  function: (self) => ({
+    "==": (other) => self.toString() === other.toString(),
+  }),
   string: (self) => self, // string functions are already built-in
   object: (self) =>
     self === null
       ? null
       : {
-          // reference equality
-          // "==": (other) => self == other,
-          // "!=": (other) => self != other,
           // deep equality
           "==": (other) => {
             if (typeof other !== "object") {
@@ -40,7 +37,6 @@ const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
 
             const selfKeys = Object.keys(self);
             const otherKeys = Object.keys(other);
-
             if (selfKeys.length !== otherKeys.length) {
               return false;
             }
@@ -84,24 +80,39 @@ const k_val = (val: any) =>
     })
   )(val);
 
-// graft member function *types* onto JS primitives
 const k_typeMap: Record<TypeString, (self: any) => Record<string, Function>> = {
-  boolean: (val) => ({}),
-  number: (val) => ({}),
-  string: (val) => ({}),
-  function: (val) => ({}),
+  boolean: (val) => k_type(k_val(val)),
+  number: (val) => k_type(k_val(val)),
+  string: (val) => k_type(k_val(val)),
+  function: (val) => ({
+    "<:": (other) => {},
+  }),
   object: (val) => {
     if (val === null) {
+      return {};
     } else {
-      // plain object
-      // introspect members
-    }
+      const types = Object.keys(val).reduce((res, key) => {
+        res[key] = k_type(val[key]);
+        return res;
+      }, {});
 
-    return {};
+      // covariant
+      types["<:"] = (other) => {
+        throw new Error("TODO");
+      };
+
+      return types;
+    }
   },
-  bigint: () => ({}),
-  undefined: () => ({}),
-  symbol: () => ({}),
+  bigint: () => {
+    throw new Error("bigint is not supported by Kythera.");
+  },
+  undefined: () => {
+    throw new Error("undefined is not supported by Kythera.");
+  },
+  symbol: () => {
+    throw new Error("TODO");
+  },
 };
 
 // get Kythera type-value for a Javascript value
@@ -112,15 +123,6 @@ const k_type = (val) => {
       throw new Error(`Unsupported type: ${typeof val} (${val})`);
     })
   )(val);
-
-  // 'self' is a subtype of 'other' if every key (and its type) in 'other' is present in 'self'
-  type["<:"] = (other) => {
-    throw new Error("TODO: subtype");
-  };
-  // 'self' is a supertype of 'other' if every key (and its type) in 'self' is present in 'other'
-  type[":>"] = (other) => {
-    throw new Error("TODO: supertype");
-  };
 
   return type;
 };

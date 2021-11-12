@@ -6,6 +6,7 @@
   "scripts": {
     "start": "ts-node src/kythera.ts",
     "build-rt": "npx tsc src/runtime/* --outdir lib/",
+    "watch-rt": "npx tsc --watch src/runtime/* --outdir lib/",
     "prettier": "prettier --write 'src/*'"
   },
   "repository": {
