@@ -5,9 +5,10 @@
   "main": "src/kythera.ts",
   "scripts": {
     "start": "ts-node src/kythera.ts",
-    "build-rt": "npx tsc src/runtime/* --outdir lib/",
-    "watch-rt": "npx tsc --watch src/runtime/* --outdir lib/",
-    "prettier": "prettier --write 'src/*'"
+    "build-rt": "tsc src/runtime/* --outdir lib/",
+    "watch-rt": "tsc --watch src/runtime/* --outdir lib/",
+    "prettier": "prettier --write 'src/*'",
+    "test": "ts-node test/test.ts",
   },
   "repository": {
     "type": "git",
@@ -27,7 +28,9 @@
     "typescript": "^4.4.4"
   },
   "devDependencies": {
+    "@types/baretest": "^2.0.0",
     "@types/node": "^16.11.2",
-    "@types/prettier": "^2.4.1"
+    "@types/prettier": "^2.4.1",
+    "baretest": "^2.0.0"
   }
 }
