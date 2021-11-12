@@ -8,7 +8,7 @@
     "build-rt": "tsc src/runtime/* --outdir lib/",
     "watch-rt": "tsc --watch src/runtime/* --outdir lib/",
     "prettier": "prettier --write 'src/*'",
-    "test": "ts-node test/test.ts",
+    "test": "ts-node test/test.ts"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,7 @@
   },
   "homepage": "https://gitlab.com/dejawu/kythera#readme",
   "dependencies": {
+    "assert": "^2.0.0",
     "prettier": "^2.4.1",
     "terser": "^5.9.0",
     "ts-node": "^10.3.1",

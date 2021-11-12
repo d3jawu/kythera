@@ -1,4 +1,4 @@
-import assert from "assert/strict";
+import { strict as assert } from "assert";
 import compile from "../src/compiler";
 
 export default (test) => {
