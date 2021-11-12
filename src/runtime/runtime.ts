@@ -68,7 +68,7 @@ const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
     throw new Error("undefined is not supported by Kythera.");
   },
   symbol: () => {
-    throw new Error("TODO");
+    throw new Error("TODO: symbol/enum");
   },
 };
 
@@ -85,7 +85,9 @@ const k_typeMap: Record<TypeString, (self: any) => Record<string, Function>> = {
   number: (val) => k_type(k_val(val)),
   string: (val) => k_type(k_val(val)),
   function: (val) => ({
-    "<:": (other) => {},
+    "<:": (other) => {
+      throw new Error("TODO: function type comparison");
+    },
   }),
   object: (val) => {
     if (val === null) {
@@ -98,7 +100,7 @@ const k_typeMap: Record<TypeString, (self: any) => Record<string, Function>> = {
 
       // covariant
       types["<:"] = (other) => {
-        throw new Error("TODO");
+        throw new Error("TODO: subtype");
       };
 
       return types;
@@ -111,7 +113,7 @@ const k_typeMap: Record<TypeString, (self: any) => Record<string, Function>> = {
     throw new Error("undefined is not supported by Kythera.");
   },
   symbol: () => {
-    throw new Error("TODO");
+    throw new Error("TODO: symbol type");
   },
 };
 

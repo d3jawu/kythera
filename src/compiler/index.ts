@@ -1,6 +1,6 @@
 import { match } from "ts-pattern";
 
-import TokenStream from "./TokenStream";
+import TokenStream, { isWhitespace } from "./TokenStream";
 
 // indicates code that has been compiled into JS
 type JS = string;
@@ -37,7 +37,7 @@ export default function compile(raw: string): JS {
         .with(".", () => {
           stream.consumeExpect(".");
           const field = stream.consume();
-          composed = `(${composed}["${field}"])`;
+          composed = `(k_val(${composed})["${field}"])`;
         })
         .when(
           (next) => !!precedenceOf(next) && makeBinary,
@@ -108,9 +108,6 @@ export default function compile(raw: string): JS {
 
         while (stream.peek() !== "]" && !stream.eof) {
           elements.push(exp(stream.consume()));
-
-          console.log("elements:");
-          console.log(elements);
 
           if (stream.peek() === ",") {
             stream.consumeExpect(",");
@@ -244,7 +241,7 @@ export default function compile(raw: string): JS {
     match<string, number | null>(op)
       .with("||", () => 3)
       .with("&&", () => 4)
-      .with("==", "!=", "===", "!==", () => 8)
+      .with("==", "!=", "<:", ":>", () => 8)
       .with("<", ">", "<=", ">=", () => 9)
       .with("+", "-", () => 11)
       .with("*", "/", "%", () => 12)
@@ -395,6 +392,7 @@ export default function compile(raw: string): JS {
     try {
       output += statement(token);
     } catch (err) {
+      console.log(stream.peek());
       console.log(output);
       stream.throwWithPos(err as string);
     }

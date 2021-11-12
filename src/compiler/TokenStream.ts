@@ -2,31 +2,12 @@ const isWhitespace = (char: string): boolean =>
   [" ", "\t", "\n", "\r"].includes(char);
 
 const isSymbol = (char: string): boolean =>
-  [
-    ".",
-    ",",
-    ";",
-    ":",
-    "<",
-    ">",
-    "=",
-    "!",
-    "+",
-    "-",
-    "/",
-    "*",
-    "%",
-    "(",
-    ")",
-    "{",
-    "}",
-    "[",
-    "]",
-    "'",
-    '"',
-  ].includes(char);
+  [".", ":", "<", ">", "=", "!", "+", "-", "/", "*", "%"].includes(char);
 
-export { isWhitespace, isSymbol };
+const isDelimiter = (char: string): boolean =>
+  ["(", ")", "{", "}", "[", "]", "'", '"', ",", ";"].includes(char);
+
+export { isWhitespace, isSymbol, isDelimiter };
 export default class TokenStream {
   pos: number;
   line: number;
@@ -85,6 +66,10 @@ export default class TokenStream {
 
     let token = "" + this.consumeChar();
 
+    if (isDelimiter(token)) {
+      return token;
+    }
+
     if (isSymbol(token)) {
       // build multi-symbol token if possible
       if (["=", "!", "+", "-", "/", "*", "%", "<", ">"].includes(token)) {
@@ -99,6 +84,7 @@ export default class TokenStream {
     while (
       !isWhitespace(this.peekChar()) &&
       !isSymbol(this.peekChar()) &&
+      !isDelimiter(this.peekChar()) &&
       !this.eof
     ) {
       token += this.consumeChar();
