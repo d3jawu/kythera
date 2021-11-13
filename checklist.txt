@@ -57,7 +57,7 @@ Your implementation has the following flaws:
 [ ] RAM does not work that way
 [ ] VMs do not work that way
 [ ] Compilers do not work that way
-[ ] Compilers cannot work that way
+[x] Compilers cannot work that way
 [ ] Shift-reduce conflicts in parsing seem to be resolved using rand()
 [ ] You require the compiler to be present at runtime
 [x] You require the language runtime to be present at compile-time
