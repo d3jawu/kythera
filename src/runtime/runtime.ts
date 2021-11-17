@@ -40,8 +40,11 @@ const u_Any = {
 // type-values that aren't critical for bootstrapping
 const u_Num = {} as kTypeVal;
 
-// allows reuse of references to type objects
-const k_typeRegistry = [u_None, u_Any, u_Bool];
+// allows reuse of references to type structs
+const k_typeRegistry: Set<kTypeVal> = new Set();
+k_typeRegistry.add(u_None);
+k_typeRegistry.add(u_Any);
+k_typeRegistry.add(u_Bool);
 
 // graft Kythera member functions onto JS primitive values
 const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
@@ -66,6 +69,7 @@ const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
     "<=": k_attachFnType((other) => self <= other, u_Fn(u_Num, u_Bool)),
     ">=": k_attachFnType((other) => self >= other, u_Fn(u_Num, u_Bool)),
     "==": k_attachFnType((other) => self === other, u_Fn(u_Num, u_Bool)),
+    "!=": k_attachFnType((other) => self !== other, u_Fn(u_Num, u_Bool)),
   }),
   function: (self) => ({
     // "==": (other) => self.toString() === other.toString(),
@@ -133,8 +137,8 @@ type kTypeVal = {
 };
 
 const k_typeMap: Record<TypeString, (self: any) => kTypeVal> = {
-  boolean: (val: boolean) => k_type(k_val(val)),
-  number: (val: number) => k_type(k_val(val)),
+  boolean: (val: boolean) => u_Bool,
+  number: (val: number) => u_Num,
   string: (val: string) => k_type(k_val(val)),
   function: (val: Function) => {
     if (val["k_fnType"]) {
@@ -148,9 +152,9 @@ const k_typeMap: Record<TypeString, (self: any) => kTypeVal> = {
     if (self === null) {
       throw new Error("null is not supported");
     } else {
-      const types = Object.keys(self).reduce((res, key) => {
+      const selfType = Object.keys(self).reduce((res, key) => {
         // break on circular reference
-        if (k_typeRegistry.includes(self[key])) {
+        if (k_typeRegistry.has(self[key])) {
           return res;
         }
 
@@ -159,15 +163,33 @@ const k_typeMap: Record<TypeString, (self: any) => kTypeVal> = {
       }, {});
 
       // covariant
-      types["<:"] = k_attachFnType((other) => {
-        throw new Error("TODO: subtype");
+      selfType["<:"] = k_attachFnType((otherType) => {
+        // 'self' <: 'other' if self provides every field f in other, and self[f] <: other[f]
+        return Object.keys(otherType).every((key) => {
+          if (key === "<:" || key === ":>") {
+            // skip subtype functions themselves
+            return true;
+          }
+
+          if (!(key in selfType)) {
+            return false;
+          }
+
+          // reference equality means definitely the same type, which means definitely compatible
+          if (selfType[key] == otherType[key]) {
+            return true;
+          }
+
+          return selfType[key]["<:"](otherType[key]);
+        });
       }, u_Fn_Type_Bool);
 
-      types[":>"] = k_attachFnType((other) => {
-        throw new Error("TODO: supertype");
-      }, u_Fn_Type_Bool);
+      selfType[":>"] = k_attachFnType(
+        (other) => other["<:"](self),
+        u_Fn_Type_Bool
+      );
 
-      return types as kTypeVal;
+      return selfType as kTypeVal;
     }
   },
   bigint: () => {
@@ -182,14 +204,16 @@ const k_typeMap: Record<TypeString, (self: any) => kTypeVal> = {
 };
 
 // get Kythera type-value for a Javascript value
-const k_type = (val) =>
-  (
+const k_type = (val) => {
+  const type = (
     k_typeMap[typeof val] ||
     ((val) => {
       throw new Error(`Unsupported type: ${typeof val} (${val})`);
     })
   )(val);
-
+  k_typeRegistry.add(type);
+  return type;
+};
 // type literals
 
 // factory for function types
@@ -198,8 +222,8 @@ const u_Fn = (from: kTypeVal, to: kTypeVal): kTypeVal => {
     throw new Error("function with undefined param types");
   }
 
-  const existing = k_typeRegistry.find((type) => {
-    if (!from || !to) {
+  const existing = [...k_typeRegistry].find((type) => {
+    if (!type.from || !type.to) {
       return false;
     }
 
@@ -230,7 +254,7 @@ const u_Fn = (from: kTypeVal, to: kTypeVal): kTypeVal => {
     ),
   };
 
-  k_typeRegistry.push(fnType);
+  k_typeRegistry.add(fnType);
 
   return fnType;
 };
@@ -241,6 +265,7 @@ const u_Fn = (from: kTypeVal, to: kTypeVal): kTypeVal => {
 Object.entries(k_type(k_val(true))).forEach(([k, v]) => {
   u_Bool[k] = v;
 });
+// Num
 Object.entries(k_type(k_val(0))).forEach(([k, v]) => {
   u_Num[k] = v;
 });

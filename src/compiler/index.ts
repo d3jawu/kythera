@@ -79,7 +79,7 @@ export default function compile(raw: string): JS {
       .with("false", () => "false")
       .with("{", () => {
         let entries: Record<string, JS> = {};
-        // object literal
+        // struct literal
         while (stream.peek() !== "}" && !stream.eof) {
           const key = stream.consume();
           stream.consumeExpect(":");

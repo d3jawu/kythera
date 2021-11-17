@@ -10,13 +10,21 @@ import compile from "./compiler";
 import config, { Mode } from "./config";
 const { mode, entryPoint } = config;
 
+import { join } from "path";
+
+const RUNTIME_BUILD_PATH = "./build/src/runtime/";
+
 (async () => {
   try {
     const program = compile(readFileSync(entryPoint).toString());
 
     // only read prelude if compile succeeds
-    const runtime: string = readFileSync("./lib/runtime.js").toString();
-    const prelude: string = readFileSync("./lib/prelude.js").toString();
+    const runtime: string = readFileSync(
+      join(RUNTIME_BUILD_PATH, "runtime.js")
+    ).toString();
+    const prelude: string = readFileSync(
+      join(RUNTIME_BUILD_PATH, "prelude.js")
+    ).toString();
     const raw = `${runtime}\n${prelude}\n${program}`;
 
     const out = await match<Mode, Promise<string>>(mode)

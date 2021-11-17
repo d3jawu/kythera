@@ -4,12 +4,22 @@
   "description": "A compact language with first-class types that compiles to JS",
   "main": "src/kythera.ts",
   "scripts": {
-    "start": "ts-node src/kythera.ts",
-    "build-rt": "tsc src/runtime/* --outdir lib/",
-    "watch-rt": "tsc --watch src/runtime/* --outdir lib/",
+    "start": "node build/src/kythera.js",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "prepare": "npm run prettier && npm run build",
     "prettier": "prettier --write 'src/*'",
-    "test": "ts-node test/test.ts"
+    "clean": "rm -rf build/",
+    "test": "ava --verbose"
   },
+  "ava": {
+    "files": [
+      "build/test/**/*"
+    ]
+  },
+  "files": [
+    "build"
+  ],
   "repository": {
     "type": "git",
     "url": "git+ssh://git@gitlab.com/dejawu/kythera.git"
@@ -29,9 +39,9 @@
     "typescript": "^4.4.4"
   },
   "devDependencies": {
-    "@types/baretest": "^2.0.0",
+    "@ava/typescript": "^3.0.1",
     "@types/node": "^16.11.2",
     "@types/prettier": "^2.4.1",
-    "baretest": "^2.0.0"
+    "ava": "^3.15.0"
   }
 }
