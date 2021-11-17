@@ -2,7 +2,13 @@
     "compilerOptions": {
         "strictNullChecks": true,
         "target": "ES6",
+        "module": "CommonJS",
         "moduleResolution": "Node",
-        "esModuleInterop": true
-    }
+        "esModuleInterop": true,
+        "outDir": "build"
+    },
+    "include": [
+        "src/**/*",
+        "test/**/*"
+    ]
 }

@@ -4,11 +4,11 @@
   "description": "A compact language with first-class types that compiles to JS",
   "main": "src/kythera.ts",
   "scripts": {
-    "start": "ts-node src/kythera.ts",
-    "build-rt": "tsc src/runtime/* --outdir lib/",
-    "watch-rt": "tsc --watch src/runtime/* --outdir lib/",
+    "start": "node build/src/kythera.js",
+    "build": "tsc",
+    "watch": "tsc --watch",
     "prettier": "prettier --write 'src/*'",
-    "test": "ts-node test/test.ts"
+    "test": "node build/test/test.js"
   },
   "repository": {
     "type": "git",

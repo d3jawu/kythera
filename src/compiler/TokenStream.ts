@@ -72,7 +72,7 @@ export default class TokenStream {
 
     if (isSymbol(token)) {
       // build multi-symbol token if possible
-      if (["=", "!", "+", "-", "/", "*", "%", "<", ">"].includes(token)) {
+      if (["=", "!", "+", "-", "/", "*", "%", "<", ">", ":"].includes(token)) {
         while (isSymbol(this.peekChar())) {
           token += this.consumeChar();
         }
