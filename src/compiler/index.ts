@@ -10,8 +10,7 @@ export default function compile(raw: string): JS {
 
   let output = "";
 
-  const isIdentifier: (string) => boolean = (word) =>
-    /^[_a-zA-Z]+[_a-zA-Z0-9]*/.test(word);
+  const isIdentifier = (word: string) => /^[_a-zA-Z]+[_a-zA-Z0-9]*/.test(word);
 
   // starting token must already have been consumed and be passed as param.
   const exp = (token: string, makeBinary: boolean = true): JS => {

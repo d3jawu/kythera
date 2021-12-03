@@ -1,10 +1,22 @@
-const _typeof = (_) => typeof _;
+const _typeof = (_: unknown) => typeof _;
 type TypeString = ReturnType<typeof _typeof>;
 
+type kTypeVal = {
+  "<:": kFnVal;
+  ":>": kFnVal;
+  [x: string]: unknown;
+};
+
+// a function that has type data attached
+type kFnVal = {
+  (...args: unknown[]): unknown;
+  k_fnType: kTypeVal;
+};
+
 // attaches a kTypeVal to a function type as a field.
-const k_attachFnType = (fn, type: kTypeVal) => {
-  fn.k_fnType = type;
-  return fn;
+const k_attachFnType = (fn: Function, type: kTypeVal): kFnVal => {
+  (fn as kFnVal).k_fnType = type;
+  return fn as kFnVal;
 };
 
 // declare type-values early to allow references to be obtained before they are fully defined
@@ -21,11 +33,11 @@ u_Fn_Type_Bool[":>"] = k_attachFnType(() => {}, u_Fn_Type_Bool);
 
 // TODO I don't think these are strictly correct, I just need them to exist right now
 u_Type["<:"] = k_attachFnType(
-  (other) => other["<:"] && other[":>"],
+  (other: kTypeVal) => other["<:"] && other[":>"],
   u_Fn_Type_Bool
 );
 u_Type[":>"] = k_attachFnType(
-  (other) => other["<:"] && other[":>"],
+  (other: kTypeVal) => other["<:"] && other[":>"],
   u_Fn_Type_Bool
 );
 const u_None = {
@@ -47,40 +59,58 @@ k_typeRegistry.add(u_Any);
 k_typeRegistry.add(u_Bool);
 
 // graft Kythera member functions onto JS primitive values
-const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
-  boolean: (self) => ({
-    "||": k_attachFnType((other) => self || other, u_Fn(u_Bool, u_Bool)),
-    "&&": k_attachFnType((other) => self && other, u_Fn(u_Bool, u_Bool)),
+const k_valMap: Record<TypeString, Function> = {
+  boolean: (self: boolean) => ({
+    "||": k_attachFnType(
+      (other: boolean) => self || other,
+      u_Fn(u_Bool, u_Bool)
+    ),
+    "&&": k_attachFnType(
+      (other: boolean) => self && other,
+      u_Fn(u_Bool, u_Bool)
+    ),
     "!": k_attachFnType(() => !self, u_Fn(u_None, u_Bool)),
-    "==": k_attachFnType((other) => self === other, u_Fn(u_Bool, u_Bool)),
-    "!=": k_attachFnType((other) => self !== other, u_Fn(u_Bool, u_Bool)),
+    "==": k_attachFnType(
+      (other: boolean) => self === other,
+      u_Fn(u_Bool, u_Bool)
+    ),
+    "!=": k_attachFnType(
+      (other: boolean) => self !== other,
+      u_Fn(u_Bool, u_Bool)
+    ),
   }),
-  number: (self) => ({
-    "+": k_attachFnType((other) => self + other, u_Fn(u_Num, u_Num)),
-    "-": k_attachFnType((other) => self - other, u_Fn(u_Num, u_Num)),
-    "*": k_attachFnType((other) => self * other, u_Fn(u_Num, u_Num)),
-    "/": k_attachFnType((other) => self / other, u_Fn(u_Num, u_Num)),
+  number: (self: number) => ({
+    "+": k_attachFnType((other: number) => self + other, u_Fn(u_Num, u_Num)),
+    "-": k_attachFnType((other: number) => self - other, u_Fn(u_Num, u_Num)),
+    "*": k_attachFnType((other: number) => self * other, u_Fn(u_Num, u_Num)),
+    "/": k_attachFnType((other: number) => self / other, u_Fn(u_Num, u_Num)),
     "%": k_attachFnType(
-      (other) => ((self % other) + other) % other,
+      (other: number) => ((self % other) + other) % other,
       u_Fn(u_Num, u_Num)
     ), // % in JS is remainder, not modulo
-    "<": k_attachFnType((other) => self < other, u_Fn(u_Num, u_Bool)),
-    ">": k_attachFnType((other) => self > other, u_Fn(u_Num, u_Bool)),
-    "<=": k_attachFnType((other) => self <= other, u_Fn(u_Num, u_Bool)),
-    ">=": k_attachFnType((other) => self >= other, u_Fn(u_Num, u_Bool)),
-    "==": k_attachFnType((other) => self === other, u_Fn(u_Num, u_Bool)),
-    "!=": k_attachFnType((other) => self !== other, u_Fn(u_Num, u_Bool)),
+    "<": k_attachFnType((other: number) => self < other, u_Fn(u_Num, u_Bool)),
+    ">": k_attachFnType((other: number) => self > other, u_Fn(u_Num, u_Bool)),
+    "<=": k_attachFnType((other: number) => self <= other, u_Fn(u_Num, u_Bool)),
+    ">=": k_attachFnType((other: number) => self >= other, u_Fn(u_Num, u_Bool)),
+    "==": k_attachFnType(
+      (other: number) => self === other,
+      u_Fn(u_Num, u_Bool)
+    ),
+    "!=": k_attachFnType(
+      (other: number) => self !== other,
+      u_Fn(u_Num, u_Bool)
+    ),
   }),
-  function: (self) => ({
-    // "==": (other) => self.toString() === other.toString(),
+  function: (self: Function | kFnVal) => ({
+    "==": (other: Function | kFnVal) => self.toString() === other.toString(),
   }),
-  string: (self) => self, // string functions are already built-in
-  object: (self) =>
+  string: (self: string) => self, // for now, just expose built-in string functions
+  object: (self: Record<string, unknown>) =>
     self === null
       ? null
       : {
           // deep equality
-          "==": k_attachFnType((other) => {
+          "==": k_attachFnType((other: Record<string, unknown>) => {
             if (typeof other !== "object") {
               return false;
             }
@@ -105,7 +135,7 @@ const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
             });
           }, u_Fn(k_type(self), u_Bool)),
           // deep inequality
-          "!=": k_attachFnType((other) => {
+          "!=": k_attachFnType((other: unknown) => {
             return !k_val(self)["=="](other);
           }, u_Fn(k_type(self), u_Bool)),
           // allow equality-checking definitions to be overridden
@@ -122,48 +152,45 @@ const k_valMap: Record<TypeString, (self: any) => Record<string, Function>> = {
   },
 };
 
-const k_val = (val: any) =>
+const k_val = (val: unknown) =>
   (
     k_valMap[typeof val] ||
-    ((val) => {
+    ((val: unknown) => {
       throw new Error(`Unsupported value: ${val}`);
     })
   )(val);
 
-type kTypeVal = {
-  "<:": (kTypeVal) => boolean;
-  ":>": (kTypeVal) => boolean;
-  [x: string]: any;
-};
-
-const k_typeMap: Record<TypeString, (self: any) => kTypeVal> = {
+const k_typeMap: Record<TypeString, Function> = {
   boolean: (val: boolean) => u_Bool,
   number: (val: number) => u_Num,
   string: (val: string) => k_type(k_val(val)),
-  function: (val: Function) => {
-    if (val["k_fnType"]) {
+  function: (val: Function | kTypeVal) => {
+    if ("k_fnType" in val) {
       return val["k_fnType"];
     } else {
       console.error(val.toString());
       throw new Error("Function value needs attached type value.");
     }
   },
-  object: (self) => {
+  object: (self: Record<string, unknown>) => {
     if (self === null) {
       throw new Error("null is not supported");
     } else {
-      const selfType = Object.keys(self).reduce((res, key) => {
-        // break on circular reference
-        if (k_typeRegistry.has(self[key])) {
-          return res;
-        }
+      const selfType: any = Object.keys(self).reduce(
+        (res: Record<string, unknown>, key) => {
+          // break on circular reference
+          if (k_typeRegistry.has(self[key] as kTypeVal)) {
+            return res;
+          }
 
-        res[key] = k_type(self[key]);
-        return res;
-      }, {});
+          res[key] = k_type(self[key]);
+          return res;
+        },
+        {}
+      );
 
       // covariant
-      selfType["<:"] = k_attachFnType((otherType) => {
+      selfType["<:"] = k_attachFnType((otherType: Record<string, unknown>) => {
         // 'self' <: 'other' if self provides every field f in other, and self[f] <: other[f]
         return Object.keys(otherType).every((key) => {
           if (key === "<:" || key === ":>") {
@@ -180,12 +207,12 @@ const k_typeMap: Record<TypeString, (self: any) => kTypeVal> = {
             return true;
           }
 
-          return selfType[key]["<:"](otherType[key]);
+          if (!selfType[key]) return selfType[key]["<:"](otherType[key]);
         });
       }, u_Fn_Type_Bool);
 
       selfType[":>"] = k_attachFnType(
-        (other) => other["<:"](self),
+        (other: any) => other["<:"](self),
         u_Fn_Type_Bool
       );
 
@@ -204,10 +231,10 @@ const k_typeMap: Record<TypeString, (self: any) => kTypeVal> = {
 };
 
 // get Kythera type-value for a Javascript value
-const k_type = (val) => {
+const k_type = (val: unknown) => {
   const type = (
     k_typeMap[typeof val] ||
-    ((val) => {
+    ((val: unknown) => {
       throw new Error(`Unsupported type: ${typeof val} (${val})`);
     })
   )(val);
@@ -244,12 +271,13 @@ const u_Fn = (from: kTypeVal, to: kTypeVal): kTypeVal => {
     to,
     // contravariant in parameter, covariant in return
     "<:": k_attachFnType(
-      (other) => from[":>"](other.from) && to["<:"](other.to),
+      (other: Record<string, unknown>) =>
+        from[":>"](other.from) && to["<:"](other.to),
       u_Fn_Type_Bool
     ),
 
     ":>": k_attachFnType(
-      (other) => other["<:"](u_Fn(from, to)),
+      (other: any) => other["<:"](u_Fn(from, to)),
       u_Fn_Type_Bool
     ),
   };
