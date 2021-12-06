@@ -63,7 +63,7 @@ export default function compile(raw: string): JS {
         return e;
       })
       .with("!", () => {
-        return `!${exp(stream.consume())}`;
+        return `(k_val(${exp(stream.consume())})["!"]())`;
       })
       .with('"', (delimiter: string) => {
         let str = "";

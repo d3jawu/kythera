@@ -10,16 +10,14 @@ const configTemplateKeys = Object.keys(configTemplate);
 const clArgs = process.argv
   .slice(2)
   .reduce((args: Record<string, string>, arg, i) => {
-    if (i === 0 && !arg.includes(":") && !arg.includes("=")) {
+    if (i === 0 && !arg.includes("=")) {
       // allow first argument to be treated as entrypoint file name
       args["entryPoint"] = arg;
       return args;
     }
 
     let argName, argVal;
-    if (arg.includes(":")) {
-      [argName, argVal] = arg.split(":");
-    } else if (arg.includes("=")) {
+    if (arg.includes("=")) {
       [argName, argVal] = arg.split("=");
     } else {
       throw new Error(
@@ -38,18 +36,9 @@ Object.keys(clArgs).forEach((argName) => {
   }
 });
 
-const configArgs = clArgs as ConfigTemplate;
 const config = {
   ...configTemplate,
-  ...(configArgs as ConfigTemplate),
+  ...(clArgs as ConfigTemplate),
 };
-const configKeys = Object.keys(config);
-configTemplateKeys.forEach((key) => {
-  if (!configKeys.includes(key)) {
-    throw new Error(
-      `Option not provided by config file or command-line arguments: ${key}`
-    );
-  }
-});
 
 export default config as ConfigTemplate;
